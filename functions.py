@@ -5,7 +5,7 @@ from sqlalchemy import create_engine, text
 import holidays
 
 from school_holidays import school_holidays #this is my .py file, not a package, it has a dictionary with school holidays in Germany
-
+from pathlib import Path
 
 #============================
 # Function 1
