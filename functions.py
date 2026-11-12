@@ -11,68 +11,22 @@ from school_holidays import school_holidays #this is my .py file, not a package,
 # Function 1
 # Get city coordinates for the city defined by the user
 #============================
-@st.cache_data(ttl=3600) #this is needed to store the coordinates of a given city for 1 hour, so that we don't have to fetch every time
+@st.cache_data
 def get_city_coordinates(city):
-    db_password = get_db_password()
-    connection = create_connection_string(db_password)
+    csv_path = Path(__file__).parent / "city_coordinates.csv"
+    city_coordinates = pd.read_csv(csv_path, encoding="utf-8-sig")
 
-    engine = create_engine(connection)
+    city_data = city_coordinates.loc[
+        city_coordinates["name"] == city
+    ]
 
-    # query = text("""
-    # SELECT
-    #     name,
-    #     lon,
-    #     lat
-    # FROM cities
-    # WHERE name = :city 
-    #     AND id IN (
-    #     SELECT DISTINCT city_id
-    #     FROM top3_ger_cities_trips
-    #     );
-    # """)
-
-    query = text("""
-    SELECT
-        t.id,
-        t.name,
-        c.lat,
-        c.lon
-    FROM top_3_german_cities AS t
-    INNER JOIN cities AS c
-        ON t.name = c.name
-    WHERE t.name = :city
-    ;
-    """)
-
-    with engine.connect() as connection:
-        city_coordinates = pd.read_sql(
-            query,
-            connection,
-            params={"city": city}
-        )
-    
-    engine.dispose()
-
-    if city_coordinates.empty:
+    if city_data.empty:
         return None
 
-    lat = float(city_coordinates["lat"].iloc[0])
-    lon = float(city_coordinates["lon"].iloc[0])
+    lat = float(city_data["lat"].iloc[0])
+    lon = float(city_data["lon"].iloc[0])
 
     return lat, lon
-
-def get_db_password():
-    db_password = st.secrets["MY_SQL_PASSWORD"] #this uses the toml file with the password, not .env
-    return db_password
-
-def create_connection_string(db_password):
-    schema = "bikesharing"
-    host = "127.0.0.1" #for local instance
-    user = "root"
-    password = db_password
-    port = 3306
-    return f'mysql+pymysql://{user}:{password}@{host}:{port}/{schema}'
-
 
 #==========================================
 # Function 2
